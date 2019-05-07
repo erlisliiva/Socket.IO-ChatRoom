@@ -1,8 +1,6 @@
 $(function () {
     let socket = io();
     let users = [];
-    let typingTimeout;
-    let titleTimeout;
     let clientUsername;
 
     $("#chat-screen").hide();
@@ -36,6 +34,7 @@ $(function () {
         }
     });
 
+    // remove 'typing...' after message sent
     $("#message-send").click(function (e) {
         e.preventDefault();// prevents page reloading
         let $message = $('#message');
@@ -43,7 +42,7 @@ $(function () {
         if (messageText.length < 1) return;
         $message.val("");
         socket.emit("message", messageText);
-        socket.emit('user typing', false); // remove 'typing...' after message sent
+        socket.emit('user typing', false);
     });
 
     socket.on('user joined', function (username) {
@@ -69,11 +68,12 @@ $(function () {
 
     });
 
+    // send on enter, new line with shift + enter
     $('#message').keyup(function (event) {
         socket.emit('user typing', true);
 
         if (event.which === 13 && !event.shiftKey) {
-            $('#message-send').click(); // send on enter, new line with shift + enter
+            $('#message-send').click();
         }
     });
 
@@ -84,6 +84,25 @@ $(function () {
             $(`#${data.username}`).hide()
         }
     });
+
+    function createMessageBubble(user, text, time) {
+        let $messageContainer = $('.message-container');
+
+        let messageDiv = $('<div>');
+        let userLabel = $('<span>').append(`<strong>${user}</strong> <i style="font-size: 12px">${time}</i>`);
+        let textContainer = $('<div>').append(`<p>${text}</p>`);
+
+        messageDiv.addClass('message-bubble');
+        userLabel.addClass('message-sender');
+        textContainer.addClass('message-text');
+        if (user === clientUsername) messageDiv.addClass('client-message');
+
+        messageDiv.append(userLabel);
+        messageDiv.append(textContainer);
+
+        $messageContainer.append(messageDiv);
+        $messageContainer.scrollTop($messageContainer.prop("scrollHeight"));
+    }
 
     function getUsers() {
         let res = [];
@@ -113,22 +132,5 @@ $(function () {
         })
     }
 
-    function createMessageBubble(user, text, time) {
-        let $messageContainer = $('.message-container');
 
-        let messageDiv = $('<div>');
-        let userLabel = $('<span>').append(`<strong>${user}</strong> <i style="font-size: 12px">${time}</i>`);
-        let textContainer = $('<div>').append(`<p>${text}</p>`);
-
-        messageDiv.addClass('message-bubble');
-        userLabel.addClass('message-sender');
-        textContainer.addClass('message-text');
-        if (user === clientUsername) messageDiv.addClass('client-message');
-
-        messageDiv.append(userLabel);
-        messageDiv.append(textContainer);
-
-        $messageContainer.append(messageDiv);
-        $messageContainer.scrollTop($messageContainer.prop("scrollHeight"));
-    }
 });
